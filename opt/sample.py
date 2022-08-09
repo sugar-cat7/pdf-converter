@@ -2,16 +2,15 @@ import cv2
 import pafy
 import os
 import img2pdf
-from PIL import Image  # img2pdfと一緒にインストールされたPillowを使います
+from PIL import Image
 
 
 def convert_pdf():
-    pdf_FileName = "./opt/output.pdf"  # 出力するPDFの名前
-    png_Folder = "./opt/sample/"  # 画像フォルダ
-    extension = ".jpg"  # 拡張子がPNGのものを対象
+    pdf_FileName = "./opt/images/output.pdf"
+    png_Folder = "./opt/images/"
+    extension = ".jpg"
 
     with open(pdf_FileName, "wb") as f:
-        # 画像フォルダの中にあるPNGファイルを取得し配列に追加、バイナリ形式でファイルに書き込む
         f.write(
             img2pdf.convert(
                 [
@@ -23,64 +22,60 @@ def convert_pdf():
         )
 
 
-def main():
-
+def convert_main():
+    os.system("mkdir -p /root/opt/images")
     # youtube url
     url = "https://www.youtube.com/watch?v=Qd2aU4uQ2rA"
-    # print("cv2:", cv2.__version__)
     video = pafy.new(url)
     best = video.getbest()
     cap = cv2.VideoCapture(best.url)
-    threshold = 12000  # 変化の敷居値
+    threshold = 12000
 
     cap.set(cv2.CAP_PROP_FPS, 5)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 420)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    # frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    # print("そうフレーム数:", frames)
-    # 最初のフレームを背景画像に設定
+    frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    # print(cap.get(cv2.CAP_PROP_FRAME_COUNT) / cap.get(cv2.CAP_PROP_FPS))
     _, previous = cap.read()
 
-    j = 0
+    frame_Num, j = 0, 0
+    frame = None
     try:
-        while cap.isOpened():
-            # フレームの取得
+        while cap.isOpened() and frames > frame_Num + 1000:
             _, frame = cap.read()
-            # frame_Num = int(cap.get(cv2.CAP_PROP_POS_FRAMES))  # 現在の再生位置（フレーム位置）の取得
-            # cap.set(cv2.CAP_PROP_POS_FRAMES, frame_Num + 100)
-            # 差分計算
+            frame_Num = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
+            cap.set(cv2.CAP_PROP_POS_FRAMES, frame_Num + 1000)
+
             diff = getDiff(previous, frame)
 
             if diff > threshold:
-                cv2.imwrite("./opt/sample/sample{}.jpg".format(j), previous)
+                page_num = str(j).zfill(4)
+                cv2.imwrite("opt/images/image{}.jpg".format(page_num), previous)
                 j += 1
             previous = frame
-
+        page_num = str(j).zfill(4)
+        cv2.imwrite("opt/images/image{}.jpg".format(page_num), frame)
+        convert_pdf()
     except:
-        cv2.imwrite("opt/sample/sample{}.jpg".format(j), frame)
+        pass
     finally:
         cap.release()
-        convert_pdf()
-    # cv2.destroyAllWindows()
+        os.system("rm -rf opt/images/*.jpg")
 
 
 # ２値化
 def binarization(img, threshold=100):
-    ret, img = cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY)
+    _, img = cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY)
     return img
 
 
 # 差分を数値化
 def getDiff(img1, img2):
-    # グレースケール変換
     img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
     img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
-    # 差分取得
     mask = cv2.absdiff(img1, img2)
-    # ２値化
     mask = binarization(mask)
     return cv2.countNonZero(mask)  # 白の要素数
 
 
-if __name__ == "__main__":
-    main()
+# convert_main()

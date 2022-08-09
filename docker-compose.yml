@@ -1,10 +1,16 @@
 version: "3"
 services:
-  python3:
+  api:
     restart: always
     build: .
-    container_name: "python3"
+    container_name: "api"
     working_dir: "/root/"
-    tty: true
     volumes:
       - ./opt:/root/opt
+      - ./app:/root/app
+    # command: mkdir -p /root/opt/sample
+    tty: true
+    expose:
+      - "8000"
+    ports:
+      - 8000:8000
