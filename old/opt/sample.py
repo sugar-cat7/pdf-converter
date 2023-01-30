@@ -23,29 +23,32 @@ def convert_pdf():
 
 
 def convert_main():
-    os.system("mkdir -p /root/opt/images")
+    # os.system("mkdir -p /root/opt/images")
     # youtube url
-    url = "https://www.youtube.com/watch?v=Qd2aU4uQ2rA"
+    url = "https://www.youtube.com/watch?v=lzp6YvJMRL4"
     video = pafy.new(url)
     best = video.getbest()
     cap = cv2.VideoCapture(best.url)
     threshold = 12000
 
-    cap.set(cv2.CAP_PROP_FPS, 5)
+    # cap.set(cv2.CAP_PROP_FPS, 5)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 420)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    # print(cap.get(cv2.CAP_PROP_FRAME_COUNT) / cap.get(cv2.CAP_PROP_FPS))
+    frame_range = int(cap.get(cv2.CAP_PROP_FPS)) * 5
+    print(frames, cap.get(cv2.CAP_PROP_FPS))
+    print(cap.get(cv2.CAP_PROP_FRAME_COUNT) / cap.get(cv2.CAP_PROP_FPS))
     _, previous = cap.read()
 
     frame_Num, j = 0, 0
     frame = None
     try:
-        while cap.isOpened() and frames > frame_Num + 1000:
+        while cap.isOpened() and frames > frame_Num + frame_range:
+            # for _ in range(frame_range):
+            #     _, _ = cap.read()
             _, frame = cap.read()
             frame_Num = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
-            cap.set(cv2.CAP_PROP_POS_FRAMES, frame_Num + 1000)
-
+            # print(frame_Num)
             diff = getDiff(previous, frame)
 
             if diff > threshold:
